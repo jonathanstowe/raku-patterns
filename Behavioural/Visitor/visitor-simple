@@ -34,6 +34,9 @@ class Car is CarElement {
 }
 
 role CarElementVisitor {
+    method visit(CarElement $e) {
+        ...
+    }
 }
 
 class CarElementDoVisitor does CarElementVisitor {
