@@ -2,12 +2,27 @@
 
 # Perl6 example of the visitor pattern in https://en.wikipedia.org/wiki/Visitor_pattern
 #
-role CarElementVisitor {
-    ...
+# This version uses a parameterised role for additional type safety within a group of
+# visitors. The first two roles and the forward declaration could easily be located in
+# a separate compilation unit.
+
+
+role Visitable { ... }
+
+role Visitor[ Visitable ::V] {
+    method visit(V $e) {
+        ...
+    }
 }
 
-class CarElement {
-    method accept(CarElementVisitor $visitor) {
+role Visitable {
+    method accept(Visitor $v) {
+        ...
+    }
+
+}
+class CarElement does Visitable {
+    method accept(Visitor[CarElement] $visitor) {
         $visitor.visit(self);
     }
 }
@@ -26,20 +41,14 @@ class Wheel is CarElement {
 class Car is CarElement {
     has CarElement @.elements = ( Wheel.new(name => "front left"), Wheel.new(name => "front right"), Wheel.new(name => "rear left"), Wheel.new(name => "rear right"), Body.new, Engine.new );
 
-    method accept(CarElementVisitor $visitor) {
+    method accept(Visitor $visitor) {
         for @.elements -> $element { $element.accept($visitor) };
         $visitor.visit(self);
 
     }
 }
 
-role CarElementVisitor {
-    method visit(CarElement $e) {
-        ...
-    }
-}
-
-class CarElementDoVisitor does CarElementVisitor {
+class CarElementDoVisitor does Visitor[CarElement] {
     multi method visit(Body $e) {
         say "Moving my body.";
     }
@@ -56,7 +65,7 @@ class CarElementDoVisitor does CarElementVisitor {
     }
 }
 
-class CarElementPrintVisitor does CarElementVisitor {
+class CarElementPrintVisitor does Visitor[CarElement] {
     multi method visit(Body $e) {
         say "Visiting body.";
     }
