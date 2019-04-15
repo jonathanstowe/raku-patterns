@@ -1,0 +1,58 @@
+#!/usr/bin/env perl6
+
+role BillingStrategy {
+    method get-actual-price(Num() $raw-price --> Num) {
+        ...
+    }
+}
+
+class HappyHourStrategy does BillingStrategy {
+    method get-actual-price( Num() $raw-price --> Num ) {
+        $raw-price / 2;
+    }
+}
+
+class NormalStrategy does BillingStrategy {
+    method get-actual-price( Num() $raw-price --> Num ) {
+        $raw-price;
+    }
+}
+
+
+class Customer {
+    has Num @!drinks;
+    has BillingStrategy $.strategy is rw handles <get-actual-price>;
+
+    method add( Num() $price, Int $quantity ) {
+        @!drinks.append(self.get-actual-price($price * $quantity));
+    }
+
+    method print-bill() {
+        my Num $sum = @!drinks.sum;
+        say "Total due: $sum";
+        @!drinks = ();
+    }
+}
+
+
+my BillingStrategy $normal-strategy     = NormalStrategy.new;
+my BillingStrategy $happy-hour-strategy = HappyHourStrategy.new;
+
+my Customer $first-customer = Customer.new(strategy => $normal-strategy);
+
+$first-customer.add(100, 1);
+$first-customer.strategy = $happy-hour-strategy;
+$first-customer.add(100, 1);
+
+my Customer $second-customer = Customer.new(strategy => $happy-hour-strategy);
+$second-customer.add(80, 1);
+
+$first-customer.print-bill;
+
+$second-customer.strategy = $normal-strategy;
+$second-customer.add(130, 2);
+$second-customer.add(250, 1);
+$second-customer.print-bill;
+
+
+# vim: ft=perl6
