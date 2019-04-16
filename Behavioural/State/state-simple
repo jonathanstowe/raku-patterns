@@ -1,0 +1,55 @@
+#!/usr/bin/env perl6
+
+
+class StateContext {
+    ...
+}
+
+role State {
+    method write-name(StateContext $sc, Str $name) {
+        ...
+    }
+}
+
+class MultipleUpperCaseState {
+    ...
+}
+
+class LowerCaseState does State {
+    method write-name(StateContext $sc, Str $name) {
+        say $name.lc;
+        $sc.state =  MultipleUpperCaseState.new;
+    }
+}
+
+class MultipleUpperCaseState does State {
+    has Int $!count = 0;
+
+    method write-name(StateContext $sc, Str $name ) {
+        say $name.uc;
+        if ( ++$!count > 1 ) {
+            $sc.state = LowerCaseState.new;
+        }
+    }
+}
+
+class StateContext {
+    has State $.state is rw = LowerCaseState.new;
+
+    method write-name(Str $name ) {
+        $!state.write-name(self, $name );
+    }
+}
+
+my StateContext $context = StateContext.new;
+
+$context.write-name("Monday");
+$context.write-name("Tuesday");
+$context.write-name("Wednesday");
+$context.write-name("Thursday");
+$context.write-name("Friday");
+$context.write-name("Saturday");
+$context.write-name("Sunday");
+
+
+# vim: ft=perl6
