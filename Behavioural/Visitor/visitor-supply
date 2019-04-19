@@ -1,0 +1,71 @@
+#!/usr/bin/env perl6
+
+# This is a re-imaging of the visitor patten with de-coupling
+# achieved using a supply rather than calling a method on the visitot`
+
+class CarElement {
+    method accept-supply(--> Supply) {
+        self.Supply;
+    }
+}
+
+class Body is CarElement {
+}
+
+class Engine is CarElement {
+
+}
+
+class Wheel is CarElement {
+    has Str $.name is required;
+}
+
+class Car is CarElement {
+    has CarElement @.elements = ( Wheel.new(name => "front left"), Wheel.new(name => "front right"), Wheel.new(name => "rear left"), Wheel.new(name => "rear right"), Body.new, Engine.new );
+
+    method accept-supply(--> Supply) {
+        Supply.merge(@.elements.map( -> $e { $e.accept-supply }), self.Supply);
+    }
+}
+
+
+class CarElementDoVisitor does Callable {
+    multi method CALL-ME(Body $e) {
+        say "Moving my body.";
+    }
+    multi method CALL-ME(Car $e ) {
+        say "Starting my car.";
+    }
+
+    multi method CALL-ME(Wheel $e) {
+        say "Kicking my { $e.name } wheel.";
+    }
+
+    multi method CALL-ME(Engine $e) {
+        say "Starting my engine.";
+    }
+}
+
+class CarElementPrintVisitor does Callable {
+    multi method CALL-ME(Body $e) {
+        say "Visiting body.";
+    }
+    multi method CALL-ME(Car $e ) {
+        say "Visting car.";
+    }
+
+    multi method CALL-ME(Wheel $e) {
+        say "Visiting { $e.name } wheel.";
+    }
+
+    multi method CALL-ME(Engine $e) {
+        say "Visiting engine.";
+    }
+}
+
+my Car $car = Car.new;
+
+$car.accept-supply.tap(CarElementPrintVisitor.new);
+$car.accept-supply.tap(CarElementDoVisitor.new);
+
+# vim: ft=perl6
