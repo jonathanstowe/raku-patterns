@@ -1,0 +1,65 @@
+#!/usr/bin/env raku
+
+enum LogLevel <None
+  Info
+  Debug
+  Warning
+  Error
+  FunctionalMessage
+  FunctionalError
+  All
+  >;
+
+role Logger {
+    has LogLevel    @.log-levels;
+    has Logger      $.next;
+
+    method message(Str $message, LogLevel $severity ) {
+        if LogLevel::All|$severity ∈ @.log-levels {
+            self.write-message($message);
+        }
+        $.next.defined && $.next.message($message, $severity);
+    }
+
+    method write-message(Str $message ) {
+        ...
+    }
+}
+
+class ConsoleLogger does Logger {
+  method write-message(Str $message) {
+    say "Writing to console: $message"
+  }
+}
+
+class EmailLogger does Logger {
+  method write-message(Str $message) {
+    say "Sending via email: $message"
+  }
+}
+
+class FileLogger does Logger {
+  method write-message(Str $message) {
+    say "Writing to Log File: $message"
+  }
+}
+
+my $logger2 = FileLogger.new(log-levels => (LogLevel::Warning, LogLevel::Error));
+my $logger1 = EmailLogger.new( log-levels => (LogLevel::FunctionalMessage, LogLevel::FunctionalError), next => $logger2 );
+my $logger  = ConsoleLogger.new(log-levels => (LogLevel::All), next => $logger1);
+
+# Handled by ConsoleLogger since the console has a loglevel of all
+$logger.message("Entering function ProcessOrder().", LogLevel::Debug);
+$logger.message("Order record retrieved.", LogLevel::Info);
+
+# Handled by ConsoleLogger and FileLogger since filelogger implements Warning & Error
+$logger.message("Customer Address details missing in Branch DataBase.", LogLevel::Warning);
+$logger.message("Customer Address details missing in Organization DataBase.", LogLevel::Error);
+
+# Handled by ConsoleLogger and EmailLogger as it implements functional error
+$logger.message("Unable to Process Order ORD1 Dated D1 For Customer C1.", LogLevel::FunctionalError);
+
+# Handled by ConsoleLogger and EmailLogger
+$logger.message("Order Dispatched.", LogLevel::FunctionalMessage);
+
+# vim: ft=raku
