@@ -1,0 +1,37 @@
+#!/usr/bin/env raku
+
+role ObserverSignal {
+}
+
+multi sub trait_mod:<is> ( Method $m, :$observer-signal! ) {
+    $m does ObserverSignal;
+}
+
+role Observable {
+    has @.observers;
+
+    method signal() {
+        for @.observers -> $observer {
+            for $observer.^methods.grep(ObserverSignal).grep(*.cando(\($observer, self))) -> $method {
+                $observer.$method(self);
+            }
+        }
+
+    }
+}
+
+class Subject is Observable {
+}
+
+class Observer {
+    method any-old-name(Subject $) is observer-signal {
+        say "got Subject signal";
+    }
+
+}
+
+my $subject = Subject.new;
+$subject.observers.push: Observer.new;
+
+$subject.signal;
+# vim: ft=raku
